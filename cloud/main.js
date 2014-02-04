@@ -62,11 +62,11 @@ function fetchSocialData(parseObject, callback) {
                 callback.success(true);
             }
         } else if (twitterSuccess && !facebookSuccess) {
-            callback.error("Twitter Success but Facebook Failed!");
+            callback.error("Twitter Success but Facebook Failed for - " + parseObject.get("articleUrl"));
         } else if (!twitterSuccess && facebookSuccess) {
-            callback.error("Facebook Success but Twitter Failed!");
+            callback.error("Facebook Success but Twitter Failed for - " + parseObject.get("articleUrl"));
         } else {
-            callback.error("Error: Twitter and Facebook Failed!");
+            callback.error("Error: Twitter and Facebook Failed for - " + parseObject.get("articleUrl"));
         }
     });
   
@@ -83,7 +83,7 @@ function fetchSocialData(parseObject, callback) {
                     console.log("Twitter - " + httpResponse['data']['count'] + " - " + articleUrl);
                 }
   
-                if (parseObject && httpResponse['data']['count']) {
+                if (parseObject && httpResponse['data']['count'] != undefined) {
                     parseObject.set("twitterCount", httpResponse['data']['count']);
                     parseObject.save(null, {
                         success: function() {
@@ -122,7 +122,7 @@ function fetchSocialData(parseObject, callback) {
                     console.log("Facebook - " + httpResponse['data'][0]['total_count'] + " - " + articleUrl);
                 }
   
-                if (parseObject && httpResponse['data'][0]['total_count']) {
+                if (parseObject && httpResponse['data'][0]['total_count'] != undefined) {
                     parseObject.set("facebookCount", httpResponse['data'][0]['total_count']);
                     parseObject.save(null, {
                         success: function() {
@@ -157,6 +157,9 @@ Parse.Cloud.job("fetchArticles", function(request, status) {
   
     // Turn on for console logging.
     var __DEBUG = true;
+    if (__DEBUG) {
+        var startingTime = new Date().getTime();
+    }
   
     var SocialData = Parse.Object.extend("SocialData");
   
@@ -203,10 +206,7 @@ Parse.Cloud.job("fetchArticles", function(request, status) {
                                         socialData.set("articleUrl", article['permalink']);
                                     }
                                     if (article['published_at']) {
-                                        if(__DEBUG) {
-                                            console.log('Article published at - ' + article['published_at']);
-                                        }  
-                                        socialData.set("publishedAt", article['published_at']);
+                                        socialData.set("publishedAt", new Date(article['published_at']));
                                     }
   
                                     socialData.save(null, {
@@ -230,7 +230,12 @@ Parse.Cloud.job("fetchArticles", function(request, status) {
   
                     // Run this code after handleResult() has been called 'articles.length' times.
                     var handleResult = _.after(articles.length, function(){
-                        status.success("Just fetched " + articles.length + " articles from SCPR!");  
+                        if (__DEBUG) {
+                            var elapsedTime = new Date().getTime() - startingTime;
+                            status.success("Just fetched " + articles.length + " articles from SCPR in " +  elapsedTime + " ms");
+                        } else {
+                            status.success("Just fetched " + articles.length + " articles from SCPR!");
+                        }
                     });
   
                 } else {
@@ -246,7 +251,7 @@ Parse.Cloud.job("fetchArticles", function(request, status) {
   
   
   
-// Job to grab articles on the SocialData table and update their SocialData counts.
+// Job to grab articles on the SocialData table less than 4 days old and update their SocialData counts.
 Parse.Cloud.job("updateSocialDataJob", function(request, status) {
     Parse.Cloud.useMasterKey();
   
@@ -257,6 +262,12 @@ Parse.Cloud.job("updateSocialDataJob", function(request, status) {
     }
   
     var query = new Parse.Query("SocialData");
+
+    // Set the query to only retrieve articles published less than 4 days ago.
+    var daysAgo = new Date();
+    daysAgo.setDate(daysAgo.getDate() - 4);
+    query.greaterThan("publishedAt", daysAgo);
+
     query.find({
         success: function(results) {
             if (__DEBUG) {
