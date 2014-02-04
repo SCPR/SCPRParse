@@ -8,23 +8,52 @@ Parse.Cloud.define("hello", function(request, response) {
     response.success("Hello world!");
 });
   
-// Retreive Social Data from a set of given articles.
+// Retreive SocialData from a set of given articles.
 Parse.Cloud.define("social_data", function(request, response) {
 
-    var testArray = ['http://othersite.com', 'http://www.test.com', 'http://www.yahoo.com', 'http://www.fake.com'];
+    // Threshold to display the social data count.
+    var SHARE_THRESHOLD = 70;
+
+    var articleIdArray = [];
+
+    if (request.params.articleIds) {
+        articleIdArray = request.params.articleIds;
+    } else {
+        response.error("Error: request needs to include a list of article IDs");
+    }  
 
     var query = new Parse.Query("SocialData");
-    query.containedIn("articleUrl", testArray);
+    query.containedIn("articleId", articleIdArray);
     query.find({
         success: function(results) {
-            var resultString = "";
+            var resultsHash = {};
             for(var i = 0; i < results.length; i++) {
-                resultString = resultString + "Result " + i + ": " + results[i].get("articleUrl") + "    "; 
+                if (resultsHash[results[i].get("articleId")] == undefined) {
+                    resultsHash[results[i].get("articleId")] = {};
+                }
+
+                if (results[i].get("twitterCount") + results[i].get("facebookCount") >= SHARE_THRESHOLD) {
+                    resultsHash[results[i].get("articleId")] = { "share_count" : results[i].get("twitterCount") + results[i].get("facebookCount") };
+                }
             }
-            response.success(resultString);
+            response.success(resultsHash);
         },
         error: function() {
-            response.error("SocialData lookup failed");
+            response.error("Error: social data lookup failed");
+        }
+    });
+});
+
+// Job used to test the above method.
+Parse.Cloud.job("social_data_test", function(request, status) {
+    var testArray = ['show_segment-35866', 'news_story-41960', 'news_story-41959', 'blog_entry-15754', 'blog_entry-15731'];
+
+    Parse.Cloud.run('social_data', { articleIds: testArray }, {
+        success: function(response) {
+            status.success(response);
+        },
+        error: function(error) {
+            status.error(error);
         }
     });
 });
