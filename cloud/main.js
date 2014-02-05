@@ -62,6 +62,7 @@ Parse.Cloud.job("social_data_test", function(request, status) {
     var testArray = [];
 
     var query = new Parse.Query("SocialData");
+    query.limit(250);
     query.find({
         success: function(results) {
             for(var i = 0; i < results.length; i++) {
@@ -321,7 +322,7 @@ Parse.Cloud.job("updateSocialDataJob", function(request, status) {
     var daysAgo = new Date();
     daysAgo.setDate(daysAgo.getDate() - 4);
     query.greaterThan("publishedAt", daysAgo);
-
+    query.limit(1000);
     query.find({
         success: function(results) {
             if (__DEBUG) {
