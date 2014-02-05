@@ -46,7 +46,7 @@ Parse.Cloud.define("social_data", function(request, response) {
                 if (shareCount >= UPPER_SHARE_THRESHOLD ||
                     (timeNow - publishedAt <= LOWER_TIME_THRESHOLD && shareCount >= LOWER_SHARE_THRESHOLD) ||
                     (timeNow - publishedAt <= MIDDLE_TIME_THRESHOLD && shareCount >= MIDDLE_SHARE_THRESHOLD)) {
-                    resultsHash[results[i].get("articleId")] = { "share_count" : shareCount };
+                    resultsHash[results[i].get("articleId")] = { "twitter_count" : results[i].get("twitterCount"), "facebook_count" : results[i].get("facebookCount") };
                 }
             }
             response.success(resultsHash);

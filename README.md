@@ -28,9 +28,11 @@ Endpoint used to recieve share counts for a given set of articles.
 Yields a hash in the form:
 ```json
     {"show_segment-35866" :  
-        {"share_count" : 75},
+        {"facebook_count" : 75,
+         "twitter_count" : 12},
      "news_story-41960" : 
-        {"share_count" : 42}, ....}
+        {"facebook_count" : 42,
+         "twitter_count" : 62}, ....}
 ```
 
 iOS implementation would look something like this:
