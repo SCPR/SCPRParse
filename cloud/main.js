@@ -7,12 +7,19 @@ var _ = require('underscore');
 Parse.Cloud.define("hello", function(request, response) {
     response.success("Hello world!");
 });
-  
-// Retreive SocialData from a set of given articles.
+
+
+// Endpoint to retrieve SocialData from a set of given articles.
 Parse.Cloud.define("social_data", function(request, response) {
 
     // Threshold to display the social data count.
-    var SHARE_THRESHOLD = 70;
+    var UPPER_SHARE_THRESHOLD = 70;
+    var MIDDLE_SHARE_THRESHOLD = 60;
+    var LOWER_SHARE_THRESHOLD = 35;
+
+    // Time frame thresholds.
+    var MIDDLE_TIME_THRESHOLD = 43200000; // 12 hours in ms.
+    var LOWER_TIME_THRESHOLD = 21600000; // 6 hours in ms.
 
     var articleIdArray = [];
 
@@ -20,7 +27,7 @@ Parse.Cloud.define("social_data", function(request, response) {
         articleIdArray = request.params.articleIds;
     } else {
         response.error("Error: request needs to include a list of article IDs");
-    }  
+    }
 
     var query = new Parse.Query("SocialData");
     query.containedIn("articleId", articleIdArray);
@@ -32,8 +39,14 @@ Parse.Cloud.define("social_data", function(request, response) {
                     resultsHash[results[i].get("articleId")] = {};
                 }
 
-                if (results[i].get("twitterCount") + results[i].get("facebookCount") >= SHARE_THRESHOLD) {
-                    resultsHash[results[i].get("articleId")] = { "share_count" : results[i].get("twitterCount") + results[i].get("facebookCount") };
+                var shareCount = results[i].get("twitterCount") + results[i].get("facebookCount");
+                var publishedAt = results[i].get("publishedAt");
+                var timeNow = new Date();
+
+                if (shareCount >= UPPER_SHARE_THRESHOLD ||
+                    (timeNow - publishedAt <= LOWER_TIME_THRESHOLD && shareCount >= LOWER_SHARE_THRESHOLD) ||
+                    (timeNow - publishedAt <= MIDDLE_TIME_THRESHOLD && shareCount >= MIDDLE_SHARE_THRESHOLD)) {
+                    resultsHash[results[i].get("articleId")] = { "share_count" : shareCount };
                 }
             }
             response.success(resultsHash);
@@ -44,33 +57,45 @@ Parse.Cloud.define("social_data", function(request, response) {
     });
 });
 
-// Job used to test the above method.
+// Job used to test the above method. Just uses all articleIds in the SocialData table to above method's output.
 Parse.Cloud.job("social_data_test", function(request, status) {
-    var testArray = ['show_segment-35866', 'news_story-41960', 'news_story-41959', 'blog_entry-15754', 'blog_entry-15731'];
+    var testArray = [];
 
-    Parse.Cloud.run('social_data', { articleIds: testArray }, {
-        success: function(response) {
-            status.success(response);
+    var query = new Parse.Query("SocialData");
+    query.find({
+        success: function(results) {
+            for(var i = 0; i < results.length; i++) {
+                testArray.push(results[i].get("articleId"));
+            }
+
+            Parse.Cloud.run('social_data', { articleIds: testArray }, {
+                success: function(response) {
+                    status.success(response);
+                },
+                error: function(error) {
+                    status.error(error);
+                }
+            });
         },
-        error: function(error) {
-            status.error(error);
+        error: function() {
+            response.error("Error: social data lookup failed");
         }
     });
 });
-  
-  
+
+
 // Used to fetch social data from Facebook and Twitter APIs.
 function fetchSocialData(parseObject, callback) {
     Parse.Cloud.useMasterKey();
-  
+
     // Turn on for console logging.
     var __DEBUG = true;
- 
+
     if (__DEBUG) {
         console.log("fetchSocialData, for article: " + parseObject.get("articleId"));
         var startingTime = new Date().getTime();
     }
-  
+
     // Used to track success/failure of each fetch function.
     var twitterSuccess = false;
     var facebookSuccess = false;
