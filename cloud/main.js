@@ -70,7 +70,7 @@ Parse.Cloud.job("social_data_test", function(request, status) {
 
             Parse.Cloud.run('social_data', { articleIds: testArray }, {
                 success: function(response) {
-                    status.success(response);
+                    status.success("Results: " + response);
                 },
                 error: function(error) {
                     status.error(error);
