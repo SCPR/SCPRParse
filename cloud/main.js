@@ -8,6 +8,62 @@ Parse.Cloud.define("hello", function(request, response) {
     response.success("Hello world!");
 });
 
+// Endpoint to retrieve SocialData for a single (or multiple) article, with no constraints for count or time threshold.
+Parse.Cloud.define("social_data_no_constraints", function(request, response) {
+
+    var articleIdArray = [];
+
+    if (request.params.articleIds) {
+        articleIdArray = request.params.articleIds;
+    } else {
+        response.error("Error: request needs to include an article ID");
+    }
+
+    var query = new Parse.Query("SocialData");
+    query.containedIn("articleId", articleIdArray);
+    query.find({
+        success: function(results) {
+            var resultsHash = {};
+            for(var i = 0; i < results.length; i++) {
+                if (resultsHash[results[i].get("articleId")] == undefined) {
+                    resultsHash[results[i].get("articleId")] = {};
+                }
+                resultsHash[results[i].get("articleId")] = { "twitter_count" : results[i].get("twitterCount"), "facebook_count" : results[i].get("facebookCount") };
+            }
+            response.success(resultsHash);
+        },
+        error: function() {
+            response.error("Error: social data lookup failed");
+        }
+    });
+});
+
+// Job used to test the social_data_no_constaints method.
+Parse.Cloud.job("social_data_no_constraints_test", function(request, status) {
+    var testArray = [];
+
+    var query = new Parse.Query("SocialData");
+    query.limit(1);
+    query.find({
+        success: function(results) {
+            for(var i = 0; i < results.length; i++) {
+                testArray.push(results[i].get("articleId"));
+            }
+            Parse.Cloud.run('social_data_no_constraints', { articleIds: testArray }, {
+                success: function(response) {
+                    status.success("Results: " + response);
+                },
+                error: function(error) {
+                    status.error(error);
+                }
+            });
+        },
+        error: function() {
+            response.error("Error: social data lookup failed");
+        }
+    });
+});
+
 
 // Endpoint to retrieve SocialData from a set of given articles.
 Parse.Cloud.define("social_data", function(request, response) {
