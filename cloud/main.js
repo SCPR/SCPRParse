@@ -96,11 +96,11 @@ Parse.Cloud.define("social_data", function(request, response) {
                 }
 
                 var shareCount = results[i].get("twitterCount") + results[i].get("facebookCount");
+                var bothCountsAboveZero = results[i].get("twitterCount") > 0 && results[i].get("facebookCount") > 0;
                 var publishedAt = results[i].get("publishedAt");
                 var timeNow = new Date();
 
-                if ( (results[i].get("twitterCount") > 0 && results.get("facebookCount") > 0) &&
-                    ( shareCount >= UPPER_SHARE_THRESHOLD ||
+                if ( bothCountsAboveZero && ( shareCount >= UPPER_SHARE_THRESHOLD ||
                       (timeNow - publishedAt <= LOWER_TIME_THRESHOLD && shareCount >= LOWER_SHARE_THRESHOLD) ||
                       (timeNow - publishedAt <= MIDDLE_TIME_THRESHOLD && shareCount >= MIDDLE_SHARE_THRESHOLD))) {
                     resultsHash[results[i].get("articleId")] = { "twitter_count" : results[i].get("twitterCount"), "facebook_count" : results[i].get("facebookCount") };
