@@ -69,9 +69,9 @@ Parse.Cloud.job("social_data_no_constraints_test", function(request, status) {
 Parse.Cloud.define("social_data", function(request, response) {
 
     // Threshold to display the social data count.
-    var UPPER_SHARE_THRESHOLD = 200;
-    var MIDDLE_SHARE_THRESHOLD = 100;
-    var LOWER_SHARE_THRESHOLD = 5;
+    var UPPER_SHARE_THRESHOLD = 70;
+    var MIDDLE_SHARE_THRESHOLD = 60;
+    var LOWER_SHARE_THRESHOLD = 35;
 
     // Time frame thresholds.
     var MIDDLE_TIME_THRESHOLD = 43200000; // 12 hours in ms.
