@@ -1,6 +1,7 @@
 // Require Underscore.js
 var _ = require('underscore');
-
+// Require pledge-free stream js
+require('cloud/pfs.js');
 
 // Use Parse.Cloud.define to define as many cloud functions as you want.
 // For example:
