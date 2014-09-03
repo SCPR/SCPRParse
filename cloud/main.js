@@ -1,7 +1,7 @@
 // Require Underscore.js
 var _ = require('underscore');
-  
-  
+
+
 // Use Parse.Cloud.define to define as many cloud functions as you want.
 // For example:
 Parse.Cloud.define("hello", function(request, response) {
@@ -157,7 +157,7 @@ function fetchSocialData(parseObject, callback) {
     // Used to track success/failure of each fetch function.
     var twitterSuccess = false;
     var facebookSuccess = false;
- 
+
     // Pass the parseObject to and run each social fetch function.
     var arrayOfSocialFunctions = [fetchTwitterCountsForUrl, fetchFacebookCountsForUrl];
     _.each(arrayOfSocialFunctions, function(func){
@@ -181,7 +181,7 @@ function fetchSocialData(parseObject, callback) {
             callback.error("Error: Twitter and Facebook Failed for - " + parseObject.get("articleUrl"));
         }
     });
-  
+
     // Hit Twitter API, get total share counts for given articleUrl, and update corresponding data on Parse.
     function fetchTwitterCountsForUrl(parseObject) {
         var articleUrl = parseObject.get("articleUrl");
@@ -194,7 +194,7 @@ function fetchSocialData(parseObject, callback) {
                 if (__DEBUG) {
                     console.log("Twitter - " + httpResponse['data']['count'] + " - " + articleUrl);
                 }
-  
+
                 if (parseObject && httpResponse['data']['count'] != undefined) {
                     parseObject.set("twitterCount", httpResponse['data']['count']);
                     parseObject.save(null, {
@@ -219,7 +219,7 @@ function fetchSocialData(parseObject, callback) {
             }
         });
     }
-  
+
     // Hit Facebook API, get total share counts for given articleUrl, and update corresponding data on Parse.
     function fetchFacebookCountsForUrl(parseObject) {
         var articleUrl = parseObject.get("articleUrl");
@@ -233,7 +233,7 @@ function fetchSocialData(parseObject, callback) {
                 if (__DEBUG) {
                     console.log("Facebook - " + httpResponse['data'][0]['total_count'] + " - " + articleUrl);
                 }
-  
+
                 if (parseObject && httpResponse['data'][0]['total_count'] != undefined) {
                     parseObject.set("facebookCount", httpResponse['data'][0]['total_count']);
                     parseObject.save(null, {
@@ -259,24 +259,24 @@ function fetchSocialData(parseObject, callback) {
         });
     }
 }
-  
-  
-  
+
+
+
 // Hit SCPR API and retrieve 20 most recent articles. Check if they already exist in our SocialData table on Parse, and
 // update data as necessary.
 Parse.Cloud.job("fetchArticles", function(request, status) {
     Parse.Cloud.useMasterKey();
-  
+
     // Turn on for console logging.
     var __DEBUG = true;
     if (__DEBUG) {
         var startingTime = new Date().getTime();
     }
-  
+
     var SocialData = Parse.Object.extend("SocialData");
-  
+
     fetchArticlesFromSCPR();
-  
+
     function fetchArticlesFromSCPR() {
         Parse.Cloud.httpRequest({
             url: 'http://www.scpr.org/api/v2/articles',
@@ -288,7 +288,7 @@ Parse.Cloud.job("fetchArticles", function(request, status) {
 
                 if (httpResponse['data']) {
                     var articles = httpResponse['data'];
-  
+
                     // For each article, query Parse to see if we already have a SocialData object with a matching articleId.
                     // If not, create and save a new SocialData row.
                     _.each(articles, function(article) {
@@ -298,29 +298,29 @@ Parse.Cloud.job("fetchArticles", function(request, status) {
                             query.find({
                                 success: function(results) {
                                     var socialData;
-                                      
+
                                     if (results.length < 1) {
                                         socialData = new SocialData();
                                         socialData.set("articleId", article['id']);
-  
+
                                         if(__DEBUG) {
                                             console.log('Creating Article ' + article['id'] + "  ---  " + socialData);
                                         }
                                     } else {
                                         socialData = results[0];
-  
+
                                         if(__DEBUG) {
                                             console.log('Found Article ' + article['id'] + "  ---  " +  results[0]);
                                         }
                                     }
-  
+
                                     if (article['permalink']) {
                                         socialData.set("articleUrl", article['permalink']);
                                     }
                                     if (article['published_at']) {
                                         socialData.set("publishedAt", new Date(article['published_at']));
                                     }
-  
+
                                     socialData.save(null, {
                                         success: function() {
                                             handleResult();
@@ -332,14 +332,14 @@ Parse.Cloud.job("fetchArticles", function(request, status) {
                                 },
                                 error: function() {
                                     if (__DEBUG) {
-                                        console.log('Did not find article with id ' + article['id']);    
+                                        console.log('Did not find article with id ' + article['id']);
                                     }
                                     handleResult();
                                 }
                             }); // query.find()
                         }
                     }); // _.each(articles)
-  
+
                     // Run this code after handleResult() has been called 'articles.length' times.
                     var handleResult = _.after(articles.length, function(){
                         if (__DEBUG) {
@@ -349,7 +349,7 @@ Parse.Cloud.job("fetchArticles", function(request, status) {
                             status.success("Just fetched " + articles.length + " articles from SCPR!");
                         }
                     });
-  
+
                 } else {
                     status.error('No data received with response code ' + httpResponse.status);
                 }
@@ -360,19 +360,19 @@ Parse.Cloud.job("fetchArticles", function(request, status) {
         }); // Parse.Cloud.httpRequest
     }
 });
-  
-  
-  
+
+
+
 // Job to grab articles on the SocialData table less than 4 days old and update their SocialData counts.
 Parse.Cloud.job("updateSocialDataJob", function(request, status) {
     Parse.Cloud.useMasterKey();
-  
+
     // Turn on for console logging.
     var __DEBUG = true;
     if (__DEBUG) {
         var startingTime = new Date().getTime();
     }
-  
+
     var query = new Parse.Query("SocialData");
 
     // Set the query to only retrieve articles published less than 4 days ago.
@@ -387,8 +387,8 @@ Parse.Cloud.job("updateSocialDataJob", function(request, status) {
             }
 
             _.each(results, function(result){
-                
-                // Fetch and update social data for each result (parseObject) from the parse query.                
+
+                // Fetch and update social data for each result (parseObject) from the parse query.
                 fetchSocialData(result, {
                     success: function(status) {
                         if (__DEBUG) {
@@ -410,7 +410,7 @@ Parse.Cloud.job("updateSocialDataJob", function(request, status) {
                     var elapsedTime = new Date().getTime() - startingTime;
                     status.success("Just updated SocialData for " + results.length + " articles in " + elapsedTime + "ms");
                 } else {
-                    status.success("Just updated SocialData for " + results.length + "  articles!");    
+                    status.success("Just updated SocialData for " + results.length + "  articles!");
                 }
             });
         },

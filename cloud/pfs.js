@@ -24,4 +24,3 @@ Parse.Cloud.job("sendPFSEmail", function(request, status) {
         status.error("Uh oh, something went wrong.");
     });
 });
-
