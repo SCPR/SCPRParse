@@ -1,10 +1,11 @@
 Parse.Cloud.job("sendPFSEmail", function(request, status) {
     var query = new Parse.Query("PFSUser")
+    query.notEqualTo("emailSent", true);
     query.find({
         success: function(results) {
-            for (var i = 0; i< results.length; i++) {
-                var object = results[i];
-                if (object.get('emailSent') == false) {
+            if (results.length > 0) {
+                for (var i = 0; i< results.length; i++) {
+                    var object = results[i];
                     sendMail(object).then(function() {
                         // Set the job's success status
                         status.success("Email send-off job completed successfully.");
@@ -15,10 +16,9 @@ Parse.Cloud.job("sendPFSEmail", function(request, status) {
                         status.error("Uh oh, something went wrong.");
                     });
                 }
-                else {
-                    status.success("Email send-off job completed");
-                }
-            }
+            } else {
+                status.success("No users to email.");
+              }
         },
         error: function(error) {
             console.log("Error" + error.code + " " + error.message);
