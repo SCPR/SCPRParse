@@ -3,12 +3,6 @@ var _ = require('underscore');
 // Require pledge-free stream js
 require('cloud/pfs.js');
 
-// Use Parse.Cloud.define to define as many cloud functions as you want.
-// For example:
-Parse.Cloud.define("hello", function(request, response) {
-    response.success("Hello world!");
-});
-
 // Endpoint to retrieve SocialData for a single (or multiple) article, with no constraints for count or time threshold.
 Parse.Cloud.define("social_data_no_constraints", function(request, response) {
 
