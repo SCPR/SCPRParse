@@ -35,6 +35,7 @@ Parse.Cloud.job("sendPFSTransactionalEmail", function(request, status) {
             if (results.length > 0) {
                 for (var i = 0; i< results.length; i++) {
                     var object = results[i];
+                    console.log("Sending email to " + object.get('email'));
                     sendMail(object).then(function() {
                         // Set the job's success status
                         status.success("Email send-off job completed successfully.");
