@@ -1,5 +1,5 @@
 Parse.Cloud.job("sendPFSBatchEmail", function(request, status) {
-    var query = new Parse.Query("PFSUser")
+    var query = new Parse.Query("PfsUser")
     query.notEqualTo("emailSent", true);
     query.equalTo("recordSource", "batch");
     query.find({
@@ -28,7 +28,7 @@ Parse.Cloud.job("sendPFSBatchEmail", function(request, status) {
 });
 
 Parse.Cloud.job("sendPFSTransactionalEmail", function(request, status) {
-    var query = new Parse.Query("PFSUser")
+    var query = new Parse.Query("PfsUser")
     query.notEqualTo("emailSent", true);
     query.find({
         success: function(results) {
