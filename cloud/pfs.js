@@ -63,7 +63,7 @@ function sendMail(userObject) {
         to: userObject.get('email'),
         from: "scprdev@scpr.org",
         subject: "Welcome to KPCC's Pledge Free Stream!",
-        text: emailBody You can now access our pledge-free live stream at: http://localhost:3000/listen_live/pledge-free?pledgeToken=" + userObject.get('pledgeToken') "
+        text: emailBody
         }, {
          success: function(response) {
             console.log(response);
