@@ -5,7 +5,7 @@ Parse.Cloud.job("sendPfsBatchEmail", function(request, status) {
     var startingTime = new Date().getTime();
     var query = new Parse.Query("PfsUser")
     query.notEqualTo("emailSent", true);
-    query.equalTo("recordSource", "batch");
+    query.equalTo("recordSource", "fallDriveBatch");
     query.find({
         success: function(results) {
             if (results.length > 0) {
@@ -40,6 +40,7 @@ Parse.Cloud.job("sendPFSTransactionalEmail", function(request, status) {
     var startingTime = new Date().getTime();
     var query = new Parse.Query("PfsUser")
     query.notEqualTo("emailSent", true);
+    query.equalTo("recordSource", "fallDrivePledge");
     query.find({
         success: function(results) {
             if (results.length > 0) {
