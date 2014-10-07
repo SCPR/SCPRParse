@@ -2,109 +2,51 @@
 var _ = require('underscore');
 
 Parse.Cloud.job("sendPfsTestEmail", function(request, status) {
-    var startingTime = new Date().getTime();
-    var query = new Parse.Query("PfsUser")
-    query.notEqualTo("emailSent", true);
-    query.equalTo("recordSource", "fallDriveTest");
-    query.find({
-        success: function(results) {
-            if (results.length > 0) {
-                _.each(results, function(result){
-                    sendMail(result, {
-                        success: function(stat) {
-                            console.log(stat);
-                            handleResult();
-                        },
-                        error: function(error) {
-                            console.log(error);
-                            handleResult();
-                        }
-                  });
-                });
-                var handleResult = _.after(results.length, function() {
-                  var elapsedTime = new Date().getTime() - startingTime;
-                  status.success("Just sent " + results.length + " emails in " + elapsedTime + "ms");
-                });
-
-            } else {
-                status.success("No users to email.");
-              }
-        },
-        error: function(error) {
-            console.log("Error" + error.code + " " + error.message);
-        }
-    });
+  queryParse("fallDriveTest");
 });
 
 Parse.Cloud.job("sendPfsBatchEmail", function(request, status) {
-    var startingTime = new Date().getTime();
-    var query = new Parse.Query("PfsUser")
-    query.notEqualTo("emailSent", true);
-    query.equalTo("recordSource", "fallDriveBatch");
-    query.find({
-        success: function(results) {
-            if (results.length > 0) {
-                _.each(results, function(result){
-                    sendMail(result, {
-                        success: function(stat) {
-                            console.log(stat);
-                            handleResult();
-                        },
-                        error: function(error) {
-                            console.log(error);
-                            handleResult();
-                        }
-                  });
-                });
-                var handleResult = _.after(results.length, function() {
-                  var elapsedTime = new Date().getTime() - startingTime;
-                  status.success("Just sent " + results.length + " emails in " + elapsedTime + "ms");
-                });
-
-            } else {
-                status.success("No users to email.");
-              }
-        },
-        error: function(error) {
-            console.log("Error" + error.code + " " + error.message);
-        }
-    });
+  queryParse("fallDriveBatch");
 });
 
 Parse.Cloud.job("sendPFSTransactionalEmail", function(request, status) {
-    var startingTime = new Date().getTime();
-    var query = new Parse.Query("PfsUser")
-    query.notEqualTo("emailSent", true);
-    query.equalTo("recordSource", "fallDrivePledge");
-    query.find({
-        success: function(results) {
-            if (results.length > 0) {
-                _.each(results, function(result){
-                    sendMail(result, {
-                        success: function(stat) {
-                            console.log(stat);
-                            handleResult();
-                        },
-                        error: function(error) {
-                            console.log(error);
-                            handleResult();
-                        }
-                  });
-                });
-                var handleResult = _.after(results.length, function() {
-                  var elapsedTime = new Date().getTime() - startingTime;
-                  status.success("Just sent " + results.length + "emails in " + elapsedTime + "ms");
-                });
-
-            } else {
-                status.success("No users to email.");
-              }
-        },
-        error: function(error) {
-            console.log("Error" + error.code + " " + error.message);
-        }
-    });
+  queryParse("fallDrivePledge");
 });
+
+function queryParse(source) {
+  var startingTime = new Date().getTime();
+  var query = new Parse.Query("PfsUser")
+  query.notEqualTo("emailSent", true);
+  query.equalTo("recordSource", source);
+  query.find({
+      success: function(results) {
+          if (results.length > 0) {
+              _.each(results, function(result){
+                  sendMail(result, {
+                      success: function(stat) {
+                          console.log(stat);
+                          handleResult();
+                      },
+                      error: function(error) {
+                          console.log(error);
+                          handleResult();
+                      }
+                });
+              });
+              var handleResult = _.after(results.length, function() {
+                var elapsedTime = new Date().getTime() - startingTime;
+                status.success("Just sent " + results.length + " emails in " + elapsedTime + "ms");
+              });
+
+          } else {
+              status.success("No users to email.");
+            }
+      },
+      error: function(error) {
+          console.log("Error" + error.code + " " + error.message);
+      }
+  });
+}
 
 function sendMail(userObject, callback) {
     var Mailgun = require('mailgun');
