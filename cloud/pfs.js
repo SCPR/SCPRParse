@@ -71,7 +71,7 @@ function sendMail(userObject, callback) {
     
     Mailgun.sendEmail({
         to: userObject.get('email'),
-        from: "membership@kpcc.org",
+        from: "Rob Risko <membership@kpcc.org>",
         subject: emailSubject,
         html: emailBody
       }, {
