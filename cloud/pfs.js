@@ -2,15 +2,15 @@
 var _ = require('underscore');
 
 Parse.Cloud.job("sendPfsTestEmail", function(request, status) {
-  queryParse("fallDriveTest");
+  queryParse("20150312-Drive-Test");
 });
 
 Parse.Cloud.job("sendPfsBatchEmail", function(request, status) {
-  queryParse("fallDriveBatch");
+  queryParse("20150312-Drive-Batch");
 });
 
 Parse.Cloud.job("sendPFSTransactionalEmail", function(request, status) {
-  queryParse("fallDrivePledge");
+  queryParse("20150312-Drive-Mango");
 });
 
 function queryParse(source) {
@@ -53,12 +53,12 @@ function sendMail(userObject, callback) {
     Mailgun.initialize('sandboxed0e928a89f043bf9593550b03de91e8.mailgun.org', 'key-c5fb719216d46d9be9d8bf80bfb468ad');
     
     // Set email body based on recordSource
-    if (userObject.get('recordSource') == "fallDriveTest") {
+    if (userObject.get('recordSource') == "20150312-Drive-Test") {
       // Test Pledges
       var emailSubject = "Important: Help Test PFS"
       var emailBody = "Dear " + userObject.get('name') + ", <br/><p>Congratulations! You are part of KPCC's fantastic membership or digital teams, and you (yes, you!) have been selected to test our Pledge Free Stream, which launches tomorrow.</p><p>First, please click on the following link: http://www.scpr.org/listen_live/pledge-free?pledgeToken=" + userObject.get('pledgeToken') + "</p><p>Second, if you see anything amiss, email Joel Withrow (jwithrow@scpr.org) and let him know.</p><p>Thirdly, if everything looks great, click reply and say \"This looks awesome!\"</p><p></br><br/>Sincerely, <br/>Joel Withrow</p>"
     } 
-    else if (userObject.get('recordSource') == "fallDriveBatch") {
+    else if (userObject.get('recordSource') == "20150312-Drive-Batch") {
       // Pre-drive Batch
       var emailSubject = "Your Ticket to Pledge-Free KPCC"
       var emailBody = "Dear " + userObject.get('name') + ", <br/><p>We're excited to introduce our newest member benefit, the Pledge-Free Stream! As a way of thanking you for your incredible generosity, you can now stream KPCC on your computer during our member drives - without any fundraising interruptions. </p><p><b>The Pledge-Free Stream starts tomorrow, October 8th</b>, the same day the Fall Drive begins.</p> <p>Bookmark this link to listen on your desktop or mobile web browser: http://www.scpr.org/listen_live/pledge-free?pledgeToken=" + userObject.get('pledgeToken') + "</p><p>How does it work? Active during our pledge drives, the Pledge-Free Stream carries all of the programming you hear on-air, but removes the fundraising breaks and replaces them with the same news and great content you hear on KPCC year-round. </p><p>Check out the FAQ page to learn more. It's the same KPCC you know and love, just without the pledge drive! As a current member, you're receiving access to the pledge-free stream for this drive automatically, so you don't need to do anything else to start streaming a pledge-free KPCC. </p><p>Thanks again for your support!</br><br/>Sincerely, <br/>Rob Risko</p><p>P.S. Having trouble accessing the pledge-free stream? Call us at 626-583-5121 or visit our FAQ page: http://www.scpr.org/pledge-free</p>"
