@@ -23,7 +23,7 @@ Parse.Cloud.define("social_data_no_constraints", function(request, response) {
                 if (resultsHash[results[i].get("articleId")] == undefined) {
                     resultsHash[results[i].get("articleId")] = {};
                 }
-                resultsHash[results[i].get("articleId")] = { "twitter_count" : results[i].get("twitterCount"), "facebook_count" : results[i].get("facebookCount") };
+                resultsHash[results[i].get("articleId")] = { "facebook_count" : results[i].get("facebookCount") };
             }
             response.success(resultsHash);
         },
@@ -62,51 +62,8 @@ Parse.Cloud.job("social_data_no_constraints_test", function(request, status) {
 
 // Endpoint to retrieve SocialData from a set of given articles.
 Parse.Cloud.define("social_data", function(request, response) {
-
-    // Threshold to display the social data count.
-    var UPPER_SHARE_THRESHOLD = 70;
-    var MIDDLE_SHARE_THRESHOLD = 60;
-    var LOWER_SHARE_THRESHOLD = 35;
-
-    // Time frame thresholds.
-    var MIDDLE_TIME_THRESHOLD = 43200000; // 12 hours in ms.
-    var LOWER_TIME_THRESHOLD = 21600000; // 6 hours in ms.
-
-    var articleIdArray = [];
-
-    if (request.params.articleIds) {
-        articleIdArray = request.params.articleIds;
-    } else {
-        response.error("Error: request needs to include a list of article IDs");
-    }
-
-    var query = new Parse.Query("SocialData");
-    query.containedIn("articleId", articleIdArray);
-    query.find({
-        success: function(results) {
-            var resultsHash = {};
-            for(var i = 0; i < results.length; i++) {
-                if (resultsHash[results[i].get("articleId")] == undefined) {
-                    resultsHash[results[i].get("articleId")] = {};
-                }
-
-                var shareCount = results[i].get("twitterCount") + results[i].get("facebookCount");
-                var bothCountsAboveZero = results[i].get("twitterCount") > 0 && results[i].get("facebookCount") > 0;
-                var publishedAt = results[i].get("publishedAt");
-                var timeNow = new Date();
-
-                if ( bothCountsAboveZero && ( shareCount >= UPPER_SHARE_THRESHOLD ||
-                      (timeNow - publishedAt <= LOWER_TIME_THRESHOLD && shareCount >= LOWER_SHARE_THRESHOLD) ||
-                      (timeNow - publishedAt <= MIDDLE_TIME_THRESHOLD && shareCount >= MIDDLE_SHARE_THRESHOLD))) {
-                    resultsHash[results[i].get("articleId")] = { "twitter_count" : results[i].get("twitterCount"), "facebook_count" : results[i].get("facebookCount") };
-                }
-            }
-            response.success(resultsHash);
-        },
-        error: function() {
-            response.error("Error: social data lookup failed");
-        }
-    });
+    // We no longer want to return any counts here.
+    response.success({});
 });
 
 // Job used to test the above method. Just uses all articleIds in the SocialData table to above method's output.
@@ -137,7 +94,7 @@ Parse.Cloud.job("social_data_test", function(request, status) {
 });
 
 
-// Used to fetch social data from Facebook and Twitter APIs.
+// Used to fetch social data from Facebook API.
 function fetchSocialData(parseObject, callback) {
     Parse.Cloud.useMasterKey();
 
@@ -150,70 +107,27 @@ function fetchSocialData(parseObject, callback) {
     }
 
     // Used to track success/failure of each fetch function.
-    var twitterSuccess = false;
     var facebookSuccess = false;
 
     // Pass the parseObject to and run each social fetch function.
-    var arrayOfSocialFunctions = [fetchTwitterCountsForUrl, fetchFacebookCountsForUrl];
+    var arrayOfSocialFunctions = [fetchFacebookCountsForUrl];
     _.each(arrayOfSocialFunctions, function(func){
         func(parseObject);
     });
 
-    // Handles the result of both fetch functions. Only run after both async calls have completed.
+    // Handles the result of the fetch functions. Only run after both async calls have completed.
     var handleResult = _.after(arrayOfSocialFunctions.length, function(){
-        if (twitterSuccess && facebookSuccess) {
+        if (facebookSuccess) {
             if (__DEBUG) {
                 var elapsedTime = new Date().getTime() - startingTime;
-                callback.success("Twitter and Facebook Successfully Queried! in " + elapsedTime + " ms");
+                callback.success("Facebook Successfully Queried! in " + elapsedTime + " ms");
             } else {
                 callback.success(true);
             }
-        } else if (twitterSuccess && !facebookSuccess) {
-            callback.error("Twitter Success but Facebook Failed for - " + parseObject.get("articleUrl"));
-        } else if (!twitterSuccess && facebookSuccess) {
-            callback.error("Facebook Success but Twitter Failed for - " + parseObject.get("articleUrl"));
         } else {
-            callback.error("Error: Twitter and Facebook Failed for - " + parseObject.get("articleUrl"));
+            callback.error("Error: Facebook Failed for - " + parseObject.get("articleUrl"));
         }
     });
-
-    // Hit Twitter API, get total share counts for given articleUrl, and update corresponding data on Parse.
-    function fetchTwitterCountsForUrl(parseObject) {
-        var articleUrl = parseObject.get("articleUrl");
-        Parse.Cloud.httpRequest({
-            url: 'http://urls.api.twitter.com/1/urls/count.json',
-            params: {
-                url : articleUrl
-            },
-            success: function(httpResponse) {
-                if (__DEBUG) {
-                    console.log("Twitter - " + httpResponse['data']['count'] + " - " + articleUrl);
-                }
-
-                if (parseObject && httpResponse['data']['count'] != undefined) {
-                    parseObject.set("twitterCount", httpResponse['data']['count']);
-                    parseObject.save(null, {
-                        success: function() {
-                            twitterSuccess = true;
-                            handleResult();
-                        },
-                        error: function() {
-                            twitterSuccess = false;
-                            handleResult();
-                        }
-                    });
-                } else {
-                    twitterSuccess = false;
-                    handleResult();
-                }
-            },
-            error: function(httpResponse) {
-                status.message('Request failed with response code ' + httpResponse.status);
-                twitterSuccess = false;
-                handleResult();
-            }
-        });
-    }
 
     // Hit Facebook API, get total share counts for given articleUrl, and update corresponding data on Parse.
     function fetchFacebookCountsForUrl(parseObject) {
