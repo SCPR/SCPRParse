@@ -5,7 +5,7 @@ Parse.Cloud.job("sendPFSTransactionalEmail", function(request, status) {
   var startingTime = new Date().getTime();
   var query = new Parse.Query("PfsUser")
   query.notEqualTo("emailSent", true);
-  query.equalTo("recordSource", "dec15pledge");
+  query.equalTo("recordSource", "spring16pledge");
   query.find({
       success: function(results) {
           if (results.length > 0) {
